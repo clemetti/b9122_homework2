@@ -2,7 +2,7 @@
 """
 Computing for Business Research - Homework Assignment #1
 
-This version: September 25th 
+This version: October 9th 
 
 @author: Clemens Lehner (cl4471) 
 """
