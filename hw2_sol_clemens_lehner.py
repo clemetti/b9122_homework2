@@ -46,10 +46,17 @@ def extract_press_release_content(url):
     
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
+
     element = soup.find(class_="col-md-9 mb-2 panel-panel radix-layouts-main-column") 
     current_text = element.get_text()
     press_release_texts.append(current_text)
-
+    
+    # Save press release as a .txt file
+    filename = f"1_{press_release_count}.txt"
+    with open(filename, 'w', encoding='utf-8') as file:
+        file.write(current_text)
+    
+    
 # Initialize list of URLs to visit
 urls_visited = [seed_url]
 
@@ -88,13 +95,13 @@ for url in press_release_urls:
 # Question 1.2
 #-----------------------------------------------------------------------------#
 
-
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
 # Initialize variables
-seed_url = "https://www.europarl.europa.eu/news/en/press-room"
+seed_url = "https://www.europarl.europa.eu/news/en/press-room/"
+max_pages_to_search = 10
 max_urls_to_search = 10
 press_release_count = 0
 press_release_urls = []
@@ -111,27 +118,49 @@ def contains_crisis(url):
 # Function to extract press release content
 def extract_press_release_content(url):
     global press_release_count
-    press_release_count += 1
-    print(f"Extracting Press Release {press_release_count}")
     
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     
     # Check if the press release is related to plenary sessions
     if soup.find("span", class_="ep_name", text="Plenary session"):
-        text = soup.get_text()
+        #text = soup.get_text()
         #content = soup.find("div", class_="content").text
+        current_text = ""
+
+    # Get the full content of the press release (title, chapo & content of paragraphs)
+    if soup.title and soup.find_all(class_="ep-a_text ep-layout_chapo") and soup.find_all(class_="ep-wysiwig_paragraph") is not None:
+        t = soup.title 
+        title = t.text
+        current_text += title
+        chapo = soup.find_all(class_="ep-a_text ep-layout_chapo")
+        for c in chapo:
+            chap = c.text 
+            current_text += chap
+        paragraphs = soup.find_all(class_="ep-wysiwig_paragraph")
+        for p in paragraphs: 
+            para = p.text
+            current_text += para
 
     # Check if the word "crisis" is in the content
-    if "crisis" in text.lower():
-        press_release_texts.append(text)
+    if "crisis" in current_text.lower(): 
+        press_release_texts.append(current_text)
+        press_release_urls.append(current_url)
         
+        # Save press release as a .txt file
+        filename = f"2_{press_release_count}.txt"
+        with open(filename, 'w', encoding='utf-8') as file:
+            file.write(current_text)
+            
+        press_release_count += 1
+        print(f"Extracting Press Release {press_release_count}")
+
 
 # Initialize list of URLs to visit
-urls_visited = [seed_url]
-
+urls_visited = [f"{seed_url}page/{page}" for page in range(max_pages_to_search)]
+ 
 # Crawl the website
-while urls_visited and len(press_release_urls) < max_urls_to_search:
+while urls_visited and len(press_release_texts) < max_urls_to_search:
     current_url = urls_visited.pop(0)
     
     try:
@@ -139,7 +168,6 @@ while urls_visited and len(press_release_urls) < max_urls_to_search:
         soup = BeautifulSoup(response.content, 'html.parser')
         
         if contains_crisis(current_url):
-                press_release_urls.append(current_url)
                 extract_press_release_content(current_url)
                              
         else:
@@ -160,9 +188,6 @@ for url in press_release_urls:
     
     
     
-
-
-
-
+    
 
     
